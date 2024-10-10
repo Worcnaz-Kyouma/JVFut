@@ -73,7 +73,7 @@ OBS: Todas as rotas começam com o URI fragment "api", desta forma: "http://loca
 
 ### Consultar Todos os Pagamentos
 
--   **Endpoint**: `/pagamentos/`
+-   **Endpoint**: `/pagamentos`
 -   **Método**: `GET`
 -   **Descrição**: Retorna uma lista de todos os pagamentos.
 
