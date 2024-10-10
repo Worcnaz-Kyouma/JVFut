@@ -51,7 +51,7 @@ public class Jogador {
         return dataNasc;
     }
 
-    public void setDatanasc(Date dataNasc) {
+    public void setDataNasc(Date dataNasc) {
         this.dataNasc = dataNasc;
     }
 

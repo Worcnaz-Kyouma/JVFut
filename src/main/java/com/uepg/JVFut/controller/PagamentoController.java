@@ -9,7 +9,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/pagamentos")
@@ -21,18 +25,47 @@ public class PagamentoController {
     @Autowired
     private JogadorRepository jogadorRepository;
 
+    private boolean isPagamentoInvalido(Pagamento pagamento) {
+        if( pagamento.getAno() == null ||
+            pagamento.getMes() == null ||
+            pagamento.getValor() == null ||
+            pagamento.getJogador() == null) return true;
+
+        LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+        int currentMonth = today.getMonthValue();
+
+        if (pagamento.getAno() > currentYear && pagamento.getAno() < 0) {
+            return true;
+        }
+
+        if (pagamento.getMes() < 1 || pagamento.getMes() > 12 ||
+                (pagamento.getAno() == currentYear && pagamento.getMes() > currentMonth)) {
+            return true;
+        }
+
+        if (pagamento.getValor() < 0) {
+            return true;
+        }
+
+        return false;
+    }
+
     @GetMapping
     public List<Pagamento> getAllPagamentos() {
         return pagamentoRepository.findAll();
     }
 
     @PostMapping
-    public ResponseEntity<Pagamento> createPagamento(@RequestBody Pagamento pagamento) {
-        Jogador jogador = jogadorRepository.findById(pagamento.getJogador().getCodJogador())
-                .orElseThrow(() -> new RuntimeException("Jogador not found"));
-
+    public ResponseEntity<Object> createPagamento(@RequestBody Pagamento pagamento) {
+        Optional<Jogador> jogador = jogadorRepository.findById(pagamento.getJogador().getCodJogador());
+        if(jogador.isEmpty()) return new ResponseEntity<>("Bad Request: Jogador deste codJogador não existe!", HttpStatus.BAD_REQUEST);
         // Removido para não sobrecarregar o retorno
         // pagamento.setJogador(jogador);
+
+        if(isPagamentoInvalido(pagamento)) {
+            return new ResponseEntity<>("Bad Request: Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
+        }
 
         Pagamento savedPagamento = pagamentoRepository.save(pagamento);
 
@@ -49,7 +82,7 @@ public class PagamentoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Pagamento> updatePagamento(@PathVariable(value = "id") Integer id, @RequestBody Pagamento pagamentoDetails) {
+    public ResponseEntity<Object> updatePagamento(@PathVariable(value = "id") Integer id, @RequestBody Pagamento pagamentoDetails) {
         Pagamento pagamento = pagamentoRepository.findById(id).orElse(null);
         if (pagamento == null) {
             return ResponseEntity.notFound().build();
@@ -59,6 +92,10 @@ public class PagamentoController {
         pagamento.setMes(pagamentoDetails.getMes());
         pagamento.setValor(pagamentoDetails.getValor());
         pagamento.setJogador(pagamentoDetails.getJogador());
+
+        if(isPagamentoInvalido(pagamento)) {
+            return new ResponseEntity<>("Bad Request: Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
+        }
 
         Pagamento updatedPagamento = pagamentoRepository.save(pagamento);
         return ResponseEntity.ok(updatedPagamento);
