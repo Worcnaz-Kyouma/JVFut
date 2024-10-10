@@ -42,50 +42,66 @@ public class JogadorController {
 
     @PostMapping
     public ResponseEntity<Object> createJogador(@RequestBody Jogador jogador) {
-        if(isJogadorInvalido(jogador)){
-            return new ResponseEntity<>("Bad Request: Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
+        try {
+            if(isJogadorInvalido(jogador)){
+                return new ResponseEntity<>("Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
+            }
+
+            Jogador newJogador = jogadorRepository.save(jogador);
+
+            return ResponseEntity.ok(newJogador);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Um erro na request ocorreu...", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        Jogador newJogador = jogadorRepository.save(jogador);
-
-        return ResponseEntity.ok(newJogador);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Jogador> getJogadorById(@PathVariable(value = "id") Integer id) {
-        Jogador jogador = jogadorRepository.findById(id).orElse(null);
-        if (jogador == null) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Object> getJogadorById(@PathVariable(value = "id") Integer id) {
+        try {
+            Jogador jogador = jogadorRepository.findById(id).orElse(null);
+            if (jogador == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok().body(jogador);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Um erro na request ocorreu...", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return ResponseEntity.ok().body(jogador);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Object> updateJogador(@PathVariable(value = "id") Integer id, @RequestBody Jogador jogadorDetails) {
-        Jogador jogador = jogadorRepository.findById(id).orElse(null);
-        if (jogador == null) {
-            return ResponseEntity.notFound().build();
-        }
-        jogador.setNome(jogadorDetails.getNome());
-        jogador.setEmail(jogadorDetails.getEmail());
-        jogador.setDataNasc(jogadorDetails.getDataNasc());
+        try {
+            Jogador jogador = jogadorRepository.findById(id).orElse(null);
+            if (jogador == null) {
+                return ResponseEntity.notFound().build();
+            }
+            jogador.setNome(jogadorDetails.getNome());
+            jogador.setEmail(jogadorDetails.getEmail());
+            jogador.setDataNasc(jogadorDetails.getDataNasc());
 
-        if(isJogadorInvalido(jogador)) {
-            return new ResponseEntity<>("Bad Request: Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
-        }
+            if(isJogadorInvalido(jogador)) {
+                return new ResponseEntity<>("Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
+            }
 
-        Jogador updatedJogador = jogadorRepository.save(jogador);
-        return ResponseEntity.ok(updatedJogador);
+            Jogador updatedJogador = jogadorRepository.save(jogador);
+            return ResponseEntity.ok(updatedJogador);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Um erro na request ocorreu...", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteJogador(@PathVariable(value = "id") Integer id) {
-        Jogador jogador = jogadorRepository.findById(id).orElse(null);
-        if (jogador == null) {
-            return ResponseEntity.notFound().build();
-        }
+        try {
+            Jogador jogador = jogadorRepository.findById(id).orElse(null);
+            if (jogador == null) {
+                return ResponseEntity.notFound().build();
+            }
 
-        jogadorRepository.delete(jogador);
-        return ResponseEntity.ok().build();
+            jogadorRepository.delete(jogador);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return new ResponseEntity<>("Um erro na request ocorreu...", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

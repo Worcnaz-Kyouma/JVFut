@@ -58,47 +58,61 @@ public class PagamentoController {
 
     @PostMapping
     public ResponseEntity<Object> createPagamento(@RequestBody Pagamento pagamento) {
-        Optional<Jogador> jogador = jogadorRepository.findById(pagamento.getJogador().getCodJogador());
-        if(jogador.isEmpty()) return new ResponseEntity<>("Bad Request: Jogador deste codJogador não existe!", HttpStatus.BAD_REQUEST);
-        // Removido para não sobrecarregar o retorno
-        // pagamento.setJogador(jogador);
+        try {
+            Optional<Jogador> jogador = jogadorRepository.findById(pagamento.getJogador().getCodJogador());
+            if(jogador.isEmpty()) return new ResponseEntity<>("Jogador deste codJogador não existe!", HttpStatus.BAD_REQUEST);
+            pagamento.setJogador(jogador.get());
 
-        if(isPagamentoInvalido(pagamento)) {
-            return new ResponseEntity<>("Bad Request: Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
+            if(isPagamentoInvalido(pagamento)) {
+                return new ResponseEntity<>("Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
+            }
+
+            Pagamento savedPagamento = pagamentoRepository.save(pagamento);
+
+            return new ResponseEntity<>(savedPagamento, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Um erro na request ocorreu...", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        Pagamento savedPagamento = pagamentoRepository.save(pagamento);
-
-        return new ResponseEntity<>(savedPagamento, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Pagamento> getPagamentoById(@PathVariable(value = "id") Integer id) {
-        Pagamento pagamento = pagamentoRepository.findById(id).orElse(null);
-        if (pagamento == null) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Object> getPagamentoById(@PathVariable(value = "id") Integer id) {
+        try {
+            Pagamento pagamento = pagamentoRepository.findById(id).orElse(null);
+            if (pagamento == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok().body(pagamento);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Um erro na request ocorreu...", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return ResponseEntity.ok().body(pagamento);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Object> updatePagamento(@PathVariable(value = "id") Integer id, @RequestBody Pagamento pagamentoDetails) {
-        Pagamento pagamento = pagamentoRepository.findById(id).orElse(null);
-        if (pagamento == null) {
-            return ResponseEntity.notFound().build();
+        try {
+            Pagamento pagamento = pagamentoRepository.findById(id).orElse(null);
+            if (pagamento == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            pagamento.setAno(pagamentoDetails.getAno());
+            pagamento.setMes(pagamentoDetails.getMes());
+            pagamento.setValor(pagamentoDetails.getValor());
+            pagamento.setJogador(pagamentoDetails.getJogador());
+            if(isPagamentoInvalido(pagamento)) {
+                return new ResponseEntity<>("Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
+            }
+
+            Optional<Jogador> jogador = jogadorRepository.findById(pagamento.getJogador().getCodJogador());
+            if(jogador.isEmpty()) return new ResponseEntity<>("Jogador deste codJogador não existe!", HttpStatus.BAD_REQUEST);
+            pagamento.setJogador(jogador.get());
+
+            Pagamento updatedPagamento = pagamentoRepository.save(pagamento);
+            return ResponseEntity.ok(updatedPagamento);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Um erro na request ocorreu...", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        pagamento.setAno(pagamentoDetails.getAno());
-        pagamento.setMes(pagamentoDetails.getMes());
-        pagamento.setValor(pagamentoDetails.getValor());
-        pagamento.setJogador(pagamentoDetails.getJogador());
-
-        if(isPagamentoInvalido(pagamento)) {
-            return new ResponseEntity<>("Bad Request: Dados incorretos ou não permitidos!", HttpStatus.BAD_REQUEST);
-        }
-
-        Pagamento updatedPagamento = pagamentoRepository.save(pagamento);
-        return ResponseEntity.ok(updatedPagamento);
     }
 
     @DeleteMapping("/{id}")
